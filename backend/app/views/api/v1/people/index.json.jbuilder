@@ -1,0 +1,2 @@
+
+json.greeting 'Hi!'
