@@ -108,6 +108,9 @@ GEM
       pp (>= 0.6.0)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
+    jbuilder (2.14.1)
+      actionview (>= 7.0.0)
+      activesupport (>= 7.0.0)
     json (2.10.2)
     language_server-protocol (3.17.0.4)
     lint_roller (1.1.0)
@@ -136,6 +139,9 @@ GEM
     nio4r (2.7.4)
     nokogiri (1.18.8-aarch64-linux-gnu)
       racc (~> 1.4)
+    pagy (43.2.3)
+      json
+      yaml
     parallel (1.27.0)
     parser (3.3.8.0)
       ast (~> 2.4.1)
@@ -267,6 +273,7 @@ GEM
       base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
+    yaml (0.4.0)
     zeitwerk (2.7.2)
 
 PLATFORMS
@@ -280,6 +287,8 @@ DEPENDENCIES
   factory_bot (~> 6.5.6)
   factory_bot_rails (~> 6.5.1)
   faker (~> 3.5.3)
+  jbuilder
+  pagy
   pg (~> 1.1)
   puma (>= 5.0)
   rack-cors
