@@ -10,8 +10,34 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 0) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_10_031640) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
+  create_table "external_identities", force: :cascade do |t|
+    t.bigint "person_id", null: false
+    t.string "source", null: false
+    t.string "external_id", null: false
+    t.string "email", null: false
+    t.string "department"
+    t.jsonb "metadata", default: {}
+    t.datetime "external_updated_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["department"], name: "index_external_identities_on_department"
+    t.index ["email", "source"], name: "index_external_identities_on_email_and_source", unique: true
+    t.index ["email"], name: "index_external_identities_on_email"
+    t.index ["person_id"], name: "index_external_identities_on_person_id"
+    t.index ["source", "external_id"], name: "index_external_identities_on_source_and_external_id", unique: true
+    t.index ["source"], name: "index_external_identities_on_source"
+  end
+
+  create_table "people", force: :cascade do |t|
+    t.string "first_name", null: false
+    t.string "last_name", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_foreign_key "external_identities", "people"
 end
