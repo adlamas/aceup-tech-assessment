@@ -275,20 +275,20 @@ PLATFORMS
 DEPENDENCIES
   bootsnap
   brakeman
-  byebug
+  byebug (~> 12.0.0)
   debug
-  factory_bot
-  factory_bot_rails
-  faker
+  factory_bot (~> 6.5.6)
+  factory_bot_rails (~> 6.5.1)
+  faker (~> 3.5.3)
   pg (~> 1.1)
   puma (>= 5.0)
   rack-cors
   rails (~> 7.2.0)
   redis (>= 4.0.1)
-  rspec
-  rspec-rails
+  rspec (~> 3.13.2)
+  rspec-rails (~> 8.0.2)
   rubocop-rails-omakase
-  shoulda-matchers
+  shoulda-matchers (~> 7.0.1)
   tzinfo-data
 
 BUNDLED WITH
