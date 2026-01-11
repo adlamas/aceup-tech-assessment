@@ -10,6 +10,7 @@ require 'shoulda/matchers'
 require 'factory_bot_rails'
 require 'rspec/core'
 require 'rspec/rails'
+require 'database_cleaner/active_record'
 
 FactoryBot.factories.clear
 FactoryBot.reload
@@ -51,6 +52,17 @@ RSpec.configure do |config|
   # examples within a transaction, remove the following line or assign false
   # instead of true.
   config.use_transactional_fixtures = true
+
+  config.before(:suite) do
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
+  end
 
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false
