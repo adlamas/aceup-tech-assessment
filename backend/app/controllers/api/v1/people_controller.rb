@@ -7,6 +7,10 @@ module Api
         @pagy, @people = pagy(scope)
       end
 
+      def show
+        @person = Person.find(params[:id])
+      end
+
       private
 
       def people_params

@@ -103,4 +103,47 @@ RSpec.describe "Api::V1::People", type: :request do
       end
     end
   end
+
+  describe "GET /api/v1/people/:id" do
+    before { host! "127.0.0.1" }
+
+    let!(:person) { Person.create!(first_name: "Michael", last_name: "Scott") }
+    let!(:identity) do
+      ExternalIdentity.create!(
+        person: person,
+        source: "crm",
+        external_id: "CRM-999",
+        email: "michael@dundermifflin.com",
+        department: "Management"
+      )
+    end
+
+    context "when the person exists" do
+      before { get "/api/v1/people/#{person.id}", as: :json }
+
+      it "returns the person data" do
+        data = json_response[:person]
+        
+        expect(data[:id]).to eq(person.id)
+        expect(data[:first_name]).to eq("Michael")
+        expect(data[:last_name]).to eq("Scott")
+      end
+
+      it "includes the person's identities" do
+        data = json_response[:person]
+        identities = data[:external_identities]
+
+        expect(identities.size).to eq(1)
+        expect(identities.first[:email]).to eq("michael@dundermifflin.com")
+      end
+    end
+
+    context "when the person does not exist" do
+      before { get "/api/v1/people/0", as: :json }
+
+      it "returns a 404 not found" do
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
 end
