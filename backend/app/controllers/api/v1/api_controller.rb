@@ -1,6 +1,7 @@
 module Api
   module V1
     class ApiController < ApplicationController
+
       include Pagy::Method
       before_action :ensure_json_request
 
