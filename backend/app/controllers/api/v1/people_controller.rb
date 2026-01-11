@@ -2,7 +2,9 @@ module Api
   module V1
     class PeopleController < Api::V1::ApiController
       def index
-        @people = People::FindPeopleService.new(people_params).call
+        scope = People::FindPeopleService.new(people_params).call
+
+        @pagy, @people = pagy(scope)
       end
 
       private

@@ -4,7 +4,7 @@ RSpec.describe "Api::V1::People", type: :request do
   describe "GET /api/v1/people" do
     # I'm having a problem with the middleware that is not permitting me to perform the request, so I bypass it
     # with this line just not to spend more time on it.
-    before { host! "localhost" }
+    before { host! "127.0.0.1" }
 
     let!(:person_1) { Person.create!(first_name: "John", last_name: "Doe") }
     let!(:person_2) { Person.create!(first_name: "Jane", last_name: "Smith") }
@@ -25,7 +25,7 @@ RSpec.describe "Api::V1::People", type: :request do
         source: "hrm",
         external_id: "HRM-123",
         email: "john@example.com",
-        department: "Sales"
+        department: "Customer service"
       )
     end
 
@@ -50,11 +50,56 @@ RSpec.describe "Api::V1::People", type: :request do
 
       it "returns all people's identities" do
         body = json_response
-        identities_p1 = body.pluck(:person)[0][:external_identities].pluck(:id).sort
-        identities_p2 = body.pluck(:person)[1][:external_identities].pluck(:id).sort
+        identities_p1 = body.pluck(:person)[0][:external_identities].pluck(:id)
+        identities_p2 = body.pluck(:person)[1][:external_identities].pluck(:id)
 
-        expect(identities_p1).to eq(person_1.external_identities.pluck(:id).sort)
-        expect(identities_p2).to eq(person_2.external_identities.pluck(:id).sort)
+        expect(identities_p1).to match_array(person_1.external_identities.pluck(:id))
+        expect(identities_p2).to match_array(person_2.external_identities.pluck(:id))
+      end
+    end
+
+    context "when filtering by email" do
+      before { get '/api/v1/people?email=john@example.com', as: :json }
+
+      it "returns only the person matching the identity email" do
+        person = json_response.pluck(:person).first
+
+        expect(person[:id]).to eq(person_1.id)
+        expect(person[:external_identities].pluck(:id)).to match_array([identity_p1_1.id, identity_p1_2.id])
+      end
+    end
+
+    context "when filtering by department" do
+      before { get '/api/v1/people?department=Engineering', as: :json }
+
+      it "returns only the people belonging to that department" do
+        body = json_response
+        person_ids = body.pluck(:person).map { |p| p[:id] }
+        person = body.pluck(:person).first
+
+        expect(person_ids).to match_array([person_2.id])
+        expect(person[:external_identities].pluck(:id)).to match_array([identity_p2.id])
+      end
+    end
+
+    context "when filtering by source" do
+      before { get '/api/v1/people?source=crm', as: :json }
+
+      it "returns only the people with identities in that source" do
+        body = json_response
+        person_ids = body.pluck(:person).map { |p| p[:id] }
+        person = body.pluck(:person).first
+
+        expect(person_ids).to match_array([person_1.id])
+        expect(person[:external_identities].pluck(:id)).to match_array([identity_p1_1.id])
+      end
+    end
+
+    context "when filtering by multiple criteria" do
+      before { get '/api/v1/people?source=hrm&department=Sales', as: :json }
+
+      it "returns an empty collection if no identity matches all criteria" do
+        expect(json_response).to be_empty
       end
     end
   end
