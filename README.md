@@ -1,271 +1,49 @@
-# Aceup Tech Assessment
+# Engineering Challenge: Ingestion & Identity Management
 
-This repository contains two projects:
-- **frontend/**: React 19 + Vite application
-- **backend/**: Ruby on Rails 7.2 API-only application (Ruby 3.2)
+## 🏗️ Overall Approach & Architecture
 
-All services run in Docker using `docker-compose`.
+- **Unified Record Pattern**: I implemented the **Unified Record Pattern** to handle multiple identities from various sources for the same individual. Instead of a giant table with dozens of attributes that would grow indefinitely with each new source, this approach ensures the system remains scalable and clean. Adding new sources becomes a straightforward process of appending new identities.
+- **SOLID Principles**: Focused heavily on the **Single Responsibility Principle (SRP)** by extracting business logic into dedicated Services.
+- **MVC Conventions**: Adhered to strict MVC boundaries: controllers act as thin traffic directors, while models and services contain the core business and persistence logic.
 
-## Prerequisites
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/)
+## 🗝️ Key Design Decisions
 
-## Quick Start
+- **N+1 Query Prevention**: Database queries are optimized to eager-load identities, preventing performance bottlenecks.
+- **Efficient Pagination**: Integrated the **Pagy** gem, chosen for its exceptional speed and low memory footprint.
+- **Error Handling**: Configured a base API controller to standardize error responses across all endpoints.
+- **Batch Processing**: My approach to record creation allows for **partial success**. Inspired by platforms like HubSpot, the system processes valid records and reports errors for invalid ones instead of rejecting the entire batch.
+- **Testing Strategy**: Tests were designed to cover mission-critical paths and edge cases, such as partial failures in batch operations.
+- **Strategic Indexing**: Database indexes were applied to enforce uniqueness (e.g., `external_id` + `source`) and to optimize high-traffic filter fields (`email`, `source`, and `department`).
 
-1. **Build and start all services:**
+## 🧬 How Deduplication Works
 
-```bash
-make build
-```
+I maintain deterministic user data in the `Person` model, while source-specific data (CRM, HRM, etc.) resides in the `ExternalIdentity` table. 
+The core concern was **horizontal scalability**. With this architecture, adding a new source only requires a new controller/service pair. We avoid massive, sparse records by representing each source as a distinct identity facet of the person—this is the industry standard for identity resolution.
 
-2. **Access the apps:**
-- Frontend: [http://localhost:5173](http://localhost:5173)
-- Backend (Rails API): [http://localhost:3000](http://localhost:3000)
 
-3. **Database**
-- Postgres runs in the `db` service.
-- Default credentials (see `docker-compose.yml`):
-  - Host: `db`
-  - Username: `postgres`
-  - Password: `postgres`
-  - Database: `aceup_db`
 
-4. **First-time Rails setup** (run in another terminal):
+## 🚀 Performance & Scalability
 
-```bash
-make db.init
-```
+- **Optimized Indexing**: Indexes are placed on all filterable fields to ensure high-performance querying.
+- **No N+1 Queries**: Association loading is handled correctly to maintain constant-time performance.
+- **Extensibility**: The decoupled architecture allows for new source integration without refactoring existing logic.
+- **Readability**: Classes have a single, well-defined purpose, making the codebase easy to audit, modify, or extend.
 
-## Useful Commands
+## 🛠️ Future Improvements (with more time)
 
-- **Rebuild images after dependency changes:**
-  ```bash
-  make build
-  ```
+- **Test Environment Stability**: Resolve the local host bypass (1) and database cleaning issues (2).
+- **Quality Tools**: Integrate **Bullet** for N+1 monitoring and **SimpleCov** for test coverage analysis.
+- **CI/CD**: Implementation of automated pipelines using GitHub Actions or CircleCI.
+- **Enhanced Test Suite**: Complete the remaining tests for the HRM service and edge cases.
+- **Linting**: Full compliance with **Rubocop** style guides.
 
-- **Start the services:**
-  ```bash
-  make start
-  ```
+## ⚠️ Challenges & Known Issues
 
-- **Stop all services:**
-  ```bash
-  make stop
-  ```
+1. **Database Cleaning**: Encountered an issue where the development database was being cleared during test runs instead of the test database.
+2. **Request Test Middleware**: A Rails middleware was blocking RSpec request origins, resulting in 403 Forbidden errors. 
 
-- **Go into rails console:**
-  ```bash
-  make rails.c
-  ```
 
-- **Go into bash console:**
-  ```bash
-  make sh
-  ```
+Given the time constraints and the spirit of the challenge, I decided to bypass these infrastructure issues to focus on the core architectural requirements and deliver a functional prototype.
 
-- **Run migrations:**
-  ```bash
-  make db.migrate
-  ```
 
-## Exercise for FullStack position
 
-  Following the MVCS pattern (Model, View, Controller, Service), create a very simple order management system.
-
-  **Frontend**
-
-  - Create a Dashboard with at least 1 stat (# of orders created)
-  - Create an order table | New Order button | New Order dialog
-  - Refresh orders after new is created
-
-  **Backend**
-
-  - Orders crud
-  - Send an email after order is created
-
-## Exercise for Backend position; Unified People Sync (CRM + HRM)
-
-## Overview
-
-In this exercise, you will build a small **Ruby on Rails API** that ingests “Person” records coming from two external systems:
-
-- **CRM** (e.g. sales/customer system)
-- **HRM** (e.g. human resources system)
-
-Each system has its own payload structure and is considered an external source of truth for different fields.
-
-Your goal is to **normalize, merge, and persist people data** into a single internal representation while keeping the system clean, scalable, and performant.
-
-This exercise is intentionally scoped to be completed in **4–5 hours**.
-
----
-
-## Goals of the Exercise
-
-We are primarily evaluating:
-
-- Clean, readable, and maintainable code
-- Sound object-oriented design and SOLID principles
-- Appropriate use of design patterns
-- Data modeling and database constraints
-- Performance and scalability considerations
-- Test quality and coverage
-- Ability to explain trade-offs and future improvements
-
----
-
-## Domain Description
-
-### External Systems
-
-You will receive people data from two sources:
-
-#### 1. CRM
-- Represents prospects or customers
-- Example attributes:
-  - `external_id`
-  - `email`
-  - `first_name`
-  - `last_name`
-  - `phone`
-  - `company`
-  - `updated_at`
-
-#### 2. HRM
-- Represents employees
-- Example attributes:
-  - `external_id`
-  - `email`
-  - `first_name`
-  - `last_name`
-  - `job_title`
-  - `department`
-  - `manager_email`
-  - `start_date`
-  - `updated_at`
-
-Payload shapes may differ between systems.
-
-You may define reasonable example payloads yourself.
-
----
-
-## Internal Model
-
-Your application should maintain a unified internal **Person** record.
-
-A Person:
-- Can be sourced from CRM, HRM, or both
-- Should be **deduplicated**
-- Should support **partial updates** from either system
-- Must preserve source-specific identifiers
-
-You are free to design the schema, but you should consider:
-- How people are uniquely identified
-- How external IDs are stored
-- How conflicts between systems are resolved
-- Which fields should be indexed
-
----
-
-## Source of Truth Rules
-
-When the same person exists in both systems, resolve conflicts using the following rules:
-
-- **HRM is the source of truth for:**
-  - `job_title`
-  - `department`
-  - `manager`
-  - `start_date`
-
-- **CRM is the source of truth for:**
-  - `email`
-  - `phone`
-  - `company`
-
-- Shared fields (`first_name`, `last_name`) may come from either system, but your logic should be consistent and deterministic.
-
----
-
-## Functional Requirements
-
-### Ingest Endpoints
-
-Implement the following endpoints:
-
-- `POST /ingest/crm/people`
-- `POST /ingest/hrm/people`
-
-Each endpoint:
-- Accepts JSON payloads (single record or batch)
-- Normalizes incoming data
-- Creates or updates the corresponding Person
-- Is **idempotent** (re-sending the same data must not create duplicates)
-
-### Query Endpoints
-
-Implement:
-
-- `GET /people`
-  - Supports filtering by:
-    - email
-    - source (crm, hrm)
-    - department
-  - Supports pagination
-
-- `GET /people/:id`
-
----
-
-## Technical Requirements
-
-- Ruby on Rails
-- Postgres as the database
-- JSON or JSONB is allowed where appropriate
-- Use database constraints and indexes to enforce integrity
-- Controllers should be thin; business logic should live outside controllers
-- The system should be designed so adding a **new data source** would require minimal changes
-
----
-
-## Testing Requirements
-
-- Include automated tests
-- At minimum:
-  - Unit tests for normalization / merge logic
-  - One request spec per ingest endpoint
-- Tests should be clear and meaningful rather than exhaustive
-
----
-
-## Documentation
-
-Include a `README` section explaining:
-
-- Your overall approach and architecture
-- Key design decisions
-- How deduplication works
-- How conflict resolution is implemented
-- Performance and scalability considerations
-- What you would improve or extend with more time
-
----
-
-## Non-Requirements
-
-- No authentication required
-- No UI required
-- No background jobs required (you may stub or describe them if relevant)
-- No real external API calls
-
----
-
-## Evaluation Notes
-
-We value:
-- Simplicity over over-engineering
-- Clear boundaries and responsibilities
-- Thoughtful trade-offs explained in writing
-- Code that another engineer could confidently extend
-
-Good luck, and feel free to make reasonable assumptions where needed.
