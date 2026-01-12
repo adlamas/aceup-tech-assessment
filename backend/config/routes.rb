@@ -18,5 +18,9 @@ Rails.application.routes.draw do
     namespace :crm do
       resources :people, only: [ :create ]
     end
+
+    namespace :hrm do
+      resources :people, only: [ :create ]
+    end
   end
 end
