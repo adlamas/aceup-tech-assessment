@@ -1,9 +1,8 @@
 require 'rails_helper'
 
-RSpec.describe "Api::V1::People", type: :request do
-  describe "GET /api/v1/people" do
-    # I'm having a problem with the middleware that is not permitting me to perform the request, so I bypass it
-    # with this line just not to spend more time on it.
+RSpec.describe "People", type: :request do
+  describe "GET /people" do
+    # Bypass middleware for Docker/Host issues
     before { host! "127.0.0.1" }
 
     let!(:person_1) { Person.create!(first_name: "John", last_name: "Doe") }
@@ -40,11 +39,10 @@ RSpec.describe "Api::V1::People", type: :request do
     end
 
     context "when no filters are provided" do
-      before { get api_v1_people_path, as: :json }
+      before { get people_path, as: :json }
 
       it "returns all people" do
         body = json_response
-
         expect(body.pluck(:person).pluck(:id)).to include(person_1.id, person_2.id)
       end
 
@@ -59,7 +57,7 @@ RSpec.describe "Api::V1::People", type: :request do
     end
 
     context "when filtering by email" do
-      before { get '/api/v1/people?email=john@example.com', as: :json }
+      before { get '/people?email=john@example.com', as: :json }
 
       it "returns only the person matching the identity email" do
         person = json_response.pluck(:person).first
@@ -70,7 +68,7 @@ RSpec.describe "Api::V1::People", type: :request do
     end
 
     context "when filtering by department" do
-      before { get '/api/v1/people?department=Engineering', as: :json }
+      before { get '/people?department=Engineering', as: :json }
 
       it "returns only the people belonging to that department" do
         body = json_response
@@ -83,7 +81,7 @@ RSpec.describe "Api::V1::People", type: :request do
     end
 
     context "when filtering by source" do
-      before { get '/api/v1/people?source=crm', as: :json }
+      before { get '/people?source=crm', as: :json }
 
       it "returns only the people with identities in that source" do
         body = json_response
@@ -96,7 +94,7 @@ RSpec.describe "Api::V1::People", type: :request do
     end
 
     context "when filtering by multiple criteria" do
-      before { get '/api/v1/people?source=hrm&department=Sales', as: :json }
+      before { get '/people?source=hrm&department=Sales', as: :json }
 
       it "returns an empty collection if no identity matches all criteria" do
         expect(json_response).to be_empty
@@ -104,7 +102,7 @@ RSpec.describe "Api::V1::People", type: :request do
     end
   end
 
-  describe "GET /api/v1/people/:id" do
+  describe "GET /people/:id" do
     before { host! "127.0.0.1" }
 
     let!(:person) { Person.create!(first_name: "Michael", last_name: "Scott") }
@@ -119,7 +117,7 @@ RSpec.describe "Api::V1::People", type: :request do
     end
 
     context "when the person exists" do
-      before { get "/api/v1/people/#{person.id}", as: :json }
+      before { get "/people/#{person.id}", as: :json }
 
       it "returns the person data" do
         data = json_response[:person]
@@ -139,7 +137,7 @@ RSpec.describe "Api::V1::People", type: :request do
     end
 
     context "when the person does not exist" do
-      before { get "/api/v1/people/0", as: :json }
+      before { get "/people/0", as: :json }
 
       it "returns a 404 not found" do
         expect(response).to have_http_status(:not_found)
